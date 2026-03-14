@@ -66,7 +66,7 @@ export default function Register() {
       <Card className="z-10 w-full max-w-lg border-white/5 shadow-netflix bg-white/[0.03] backdrop-blur-3xl overflow-hidden group">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
         <CardHeader className="space-y-4 pb-4 pt-10 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-glow-red transform group-hover:rotate-12 transition-transform duration-500">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-glow-purple transform group-hover:rotate-12 transition-transform duration-500">
             <UserPlus className="h-8 w-8 text-white" />
           </div>
           <div className="space-y-2">
@@ -147,7 +147,7 @@ export default function Register() {
                 />
               </div>
             </div>
-            <Button type="submit" className="h-14 w-full text-lg font-black uppercase tracking-widest bg-primary text-white shadow-glow-red hover:shadow-primary/40 mt-4" disabled={loading}>
+            <Button type="submit" className="h-14 w-full text-lg font-black uppercase tracking-widest bg-primary text-white shadow-glow-purple hover:shadow-primary/40 mt-4" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />

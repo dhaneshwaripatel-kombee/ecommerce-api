@@ -160,7 +160,7 @@ export default function OrderList() {
             Order Nexus
           </div>
         </div>
-        <Button onClick={openCreate} className="h-12 px-8 text-base font-black uppercase tracking-widest bg-primary text-white shadow-glow-red hover:shadow-primary/40">
+        <Button onClick={openCreate} className="h-12 px-8 text-base font-black uppercase tracking-widest bg-primary text-white shadow-glow-purple hover:shadow-primary/40">
           <Plus className="h-5 w-5 mr-2" />
           Log Transaction
         </Button>
@@ -187,7 +187,7 @@ export default function OrderList() {
           <div className="relative">
             {loading && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                <Loader2 className="h-12 w-12 animate-spin text-primary shadow-glow-red" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary shadow-glow-purple" />
               </div>
             )}
             
@@ -266,7 +266,7 @@ export default function OrderList() {
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-primary shadow-glow-red">{page}</span>
+                <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-primary shadow-glow-purple">{page}</span>
                 <span className="text-xs text-slate-700 font-bold">/</span>
                 <span className="text-xs font-black text-slate-500 px-2">{lastPage}</span>
               </div>
@@ -327,7 +327,7 @@ export default function OrderList() {
               </div>
               <DialogFooter className="pt-6">
                 <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Abort</Button>
-                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-red">
+                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-purple">
                   {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   Execute Transaction
                 </Button>
@@ -348,7 +348,7 @@ export default function OrderList() {
             <form onSubmit={handleEdit} className="space-y-6 text-center">
               <div className="rounded-2xl bg-white/[0.02] p-6 border border-white/5 shadow-inner">
                   <div className="flex flex-col items-center gap-4">
-                      <div className="h-14 w-14 rounded-2xl bg-primary/10 shadow-glow-red flex items-center justify-center border border-primary/20">
+                      <div className="h-14 w-14 rounded-2xl bg-primary/10 shadow-glow-purple flex items-center justify-center border border-primary/20">
                           <PackageOpen className="h-8 w-8 text-primary" />
                       </div>
                       <div>
@@ -369,7 +369,7 @@ export default function OrderList() {
               </div>
               <DialogFooter className="pt-6">
                 <Button type="button" variant="ghost" onClick={() => setEditOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Negative, Abort</Button>
-                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-red">
+                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-purple">
                   {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   Commit State
                 </Button>

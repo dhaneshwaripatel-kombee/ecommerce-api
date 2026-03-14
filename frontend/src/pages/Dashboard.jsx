@@ -30,7 +30,7 @@ export default function Dashboard() {
               <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">
                 {stat.title}
               </CardTitle>
-              <div className={cn("rounded-xl p-2 shadow-glow-red", stat.bg)}>
+              <div className={cn("rounded-xl p-2 shadow-glow-purple", stat.bg)}>
                 <stat.icon className={cn("h-4 w-4", stat.color)} />
               </div>
             </CardHeader>

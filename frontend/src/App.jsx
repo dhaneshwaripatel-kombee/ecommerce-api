@@ -15,7 +15,7 @@ function ProtectedRoute({ children }) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4 bg-background">
         <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-10 w-10 animate-spin text-primary shadow-glow-red" />
+            <Loader2 className="h-10 w-10 animate-spin text-primary shadow-glow-purple" />
             <span className="text-xs font-black uppercase tracking-widest text-slate-500 animate-pulse">Synchronizing Session...</span>
         </div>
       </div>
@@ -31,7 +31,7 @@ function PublicRoute({ children }) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4 bg-background">
         <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-10 w-10 animate-spin text-primary shadow-glow-red" />
+            <Loader2 className="h-10 w-10 animate-spin text-primary shadow-glow-purple" />
             <span className="text-xs font-black uppercase tracking-widest text-slate-500 animate-pulse">Verifying Integrity...</span>
         </div>
       </div>

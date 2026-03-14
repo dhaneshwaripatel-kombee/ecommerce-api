@@ -195,7 +195,7 @@ export default function ProductList() {
             Inventory Control
           </div>
         </div>
-        <Button onClick={openCreate} className="h-12 px-8 text-base font-black uppercase tracking-widest bg-primary text-white shadow-glow-red hover:shadow-primary/40">
+        <Button onClick={openCreate} className="h-12 px-8 text-base font-black uppercase tracking-widest bg-primary text-white shadow-glow-purple hover:shadow-primary/40">
           <Plus className="h-5 w-5 mr-2" />
           Acquire Item
         </Button>
@@ -230,7 +230,7 @@ export default function ProductList() {
           <div className="relative">
             {loading && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                <Loader2 className="h-12 w-12 animate-spin text-primary shadow-glow-red" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary shadow-glow-purple" />
               </div>
             )}
             
@@ -306,7 +306,7 @@ export default function ProductList() {
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-primary shadow-glow-red">{page}</span>
+                <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-primary shadow-glow-purple">{page}</span>
                 <span className="text-xs text-slate-700 font-bold">/</span>
                 <span className="text-xs font-black text-slate-500 px-2">{lastPage}</span>
               </div>
@@ -363,7 +363,7 @@ export default function ProductList() {
               </div>
               <DialogFooter className="pt-6">
                 <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Abort</Button>
-                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-red">
+                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-purple">
                   {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   Manifest Now
                 </Button>
@@ -410,7 +410,7 @@ export default function ProductList() {
               </div>
               <DialogFooter className="pt-6">
                 <Button type="button" variant="ghost" onClick={() => setEditOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Abort</Button>
-                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-red">
+                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-purple">
                   {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   Commit Edits
                 </Button>
@@ -421,7 +421,7 @@ export default function ProductList() {
       </Dialog>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-[450px] bg-background border-primary/20 p-8 shadow-glow-red">
+        <DialogContent className="sm:max-w-[450px] bg-background border-primary/20 p-8 shadow-glow-purple">
           <DialogHeader className="space-y-4">
             <DialogTitle className="text-3xl font-black text-primary uppercase italic tracking-tighter">Purge Protocol</DialogTitle>
             <DialogDescription className="text-white font-bold text-base leading-relaxed">

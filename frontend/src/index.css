@@ -10,7 +10,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 357 91% 47%; /* #e50914 (Netflix Red) */
+    --primary: 267 75% 60%; /* Vibrant Purple */
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 18%;
     --secondary-foreground: 0 0% 98%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --ring: 357 91% 47%;
+    --ring: 267 75% 60%;
     --radius: 0.5rem;
   }
 }

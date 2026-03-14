@@ -40,7 +40,7 @@ export function Layout({ children }) {
                     className={cn(
                       "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-all duration-300",
                       location.pathname === item.path 
-                        ? "text-white bg-white/10 shadow-glow-red" 
+                        ? "text-white bg-white/10 shadow-glow-purple" 
                         : "text-slate-400 hover:text-white hover:bg-white/5"
                     )}
                   >
@@ -53,7 +53,7 @@ export function Layout({ children }) {
 
             <div className="flex items-center gap-4">
               <div className="hidden items-center gap-3 rounded-full bg-white/5 pl-1 pr-4 py-1 sm:flex border border-white/10">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-glow-red">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-glow-purple">
                   <User className="h-4 w-4 text-white" />
                 </div>
                 <span className="text-xs font-bold text-white/90">{user?.name ?? user?.email}</span>
