@@ -15,7 +15,7 @@ import { formatCurrency } from '../utils/format'
 const initialProductForm = { name: '', description: '', price: '', stock: '' }
 
 export default function ProductList() {
-  const { toast } = useToast()
+  const toast = useToast()
   const [list, setList] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
