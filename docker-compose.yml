@@ -26,6 +26,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    volumes:
+      - ./backend:/var/www/html
     networks:
       - observability_network
 
@@ -61,6 +63,9 @@ services:
       - "5173:5173"
     depends_on:
       - laravel
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - observability_network
 

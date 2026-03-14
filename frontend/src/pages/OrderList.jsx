@@ -1,25 +1,40 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Alert } from '../components/Alert'
-import { Button } from '../components/Button'
-import { Modal } from '../components/Modal'
-import { Select } from '../components/Select'
-import { Spinner } from '../components/Spinner'
-import { Table } from '../components/Table'
+import { Button } from '../components/ui/button'
+import { Card, CardContent } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table"
+import { Label } from '../components/ui/label'
+import { Input } from '../components/ui/input'
 import { useToast } from '../contexts/ToastContext'
 import { orderService } from '../services/orderService'
 import { productService } from '../services/productService'
 import { getApiErrorMessage } from '../utils/apiError'
-import { DEFAULT_PER_PAGE, ORDER_STATUSES, PER_PAGE_OPTIONS } from '../utils/constants'
+import { DEFAULT_PER_PAGE, ORDER_STATUSES } from '../utils/constants'
 import { formatCurrency, formatDate } from '../utils/format'
+import { ShoppingBag, Plus, Loader2, ChevronLeft, ChevronRight, SlidersHorizontal, Edit3, PackageOpen } from 'lucide-react'
 
 export default function OrderList() {
   const toast = useToast()
   const [list, setList] = useState(null)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE)
+  const [perPage] = useState(DEFAULT_PER_PAGE)
   const [statusFilter, setStatusFilter] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -31,7 +46,6 @@ export default function OrderList() {
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
-    setError('')
     try {
       const params = { page, per_page: perPage }
       if (statusFilter) params.status = statusFilter
@@ -39,7 +53,6 @@ export default function OrderList() {
       setList(data)
     } catch (err) {
       const message = getApiErrorMessage(err)
-      setError(message)
       toast.error(message)
     } finally {
       setLoading(false)
@@ -101,7 +114,6 @@ export default function OrderList() {
       fetchOrders()
     } catch (err) {
       const message = getApiErrorMessage(err)
-      setFormErrors({ _: message })
       toast.error(message)
     } finally {
       setSubmitLoading(false)
@@ -118,210 +130,255 @@ export default function OrderList() {
       toast.success('Order updated successfully.')
       fetchOrders()
     } catch (err) {
-      const message = getApiErrorMessage(err)
-      setFormErrors({ _: message })
-      toast.error(message)
+      toast.error(getApiErrorMessage(err))
     } finally {
       setSubmitLoading(false)
     }
   }
 
-  const columns = [
-    { key: 'id', header: 'ID', width: '80px' },
-    { key: 'user_id', header: 'User ID', render: (v) => v ?? '—' },
-    {
-      key: 'product',
-      header: 'Product',
-      render: (_, row) => (row.product?.name ?? row.product_id ?? '—'),
-    },
-    { key: 'quantity', header: 'Quantity' },
-    { key: 'total_price', header: 'Total', render: (v) => formatCurrency(v) },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (v) => (
-        <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-          {v ?? '—'}
-        </span>
-      ),
-    },
-    { key: 'created_at', header: 'Date', render: (v) => formatDate(v) },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (_, row) => (
-        <Button size="sm" variant="secondary" onClick={() => openEdit(row)}>
-          Edit
-        </Button>
-      ),
-    },
-  ]
-
-  const paginatedData = list?.data ?? []
-  const total = list?.total ?? 0
   const lastPage = list?.last_page ?? 1
+  const total = list?.total ?? 0
+
+  const getStatusVariant = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return 'success'
+      case 'shipped': return 'default'
+      case 'processing': return 'warning'
+      case 'pending': return 'secondary'
+      case 'cancelled': return 'destructive'
+      default: return 'outline'
+    }
+  }
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <Button onClick={openCreate}>Create order</Button>
-      </div>
-
-      {error && (
-        <Alert variant="error" className="mt-4" onDismiss={() => setError('')}>
-          {error}
-        </Alert>
-      )}
-
-      <div className="mt-6 flex flex-wrap items-center gap-4">
-        <Select
-          placeholder="All statuses"
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-          options={ORDER_STATUSES}
-          className="w-40"
-        />
-        <Select
-          value={perPage}
-          onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }}
-          options={PER_PAGE_OPTIONS.map((n) => ({ value: n, label: `${n} per page` }))}
-          className="w-36"
-        />
-      </div>
-
-      <div className="mt-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-12">
-            <Spinner size="lg" />
-            <p className="text-gray-500">Loading orders...</p>
+    <div className="space-y-12">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-black tracking-tighter text-white uppercase">Transaction Stream</h1>
+          <div className="flex items-center gap-2 text-primary font-bold tracking-widest text-xs uppercase">
+            <ShoppingBag className="h-4 w-4" />
+            Order Nexus
           </div>
-        ) : (
-          <>
-            <Table
-              columns={columns}
-              data={paginatedData}
-              emptyMessage="No orders found."
-            />
-            {lastPage > 1 && (
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-sm text-gray-600">
-                  Showing page {page} of {lastPage} ({total} total)
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={page >= lastPage}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
+        </div>
+        <Button onClick={openCreate} className="h-12 px-8 text-base font-black uppercase tracking-widest bg-primary text-white shadow-glow-red hover:shadow-primary/40">
+          <Plus className="h-5 w-5 mr-2" />
+          Log Transaction
+        </Button>
+      </div>
+
+      <Card className="border-white/5 bg-white/5 shadow-netflix overflow-hidden">
+        <CardContent className="p-0">
+          <div className="flex flex-col lg:flex-row items-center gap-6 p-8 border-b border-white/5 bg-white/[0.02]">
+            <div className="flex items-center gap-4 w-full lg:w-auto">
+                <SlidersHorizontal className="h-5 w-5 text-slate-600 mr-2" />
+                <select 
+                    className="h-12 w-full lg:w-64 rounded-xl border border-white/10 bg-black/40 px-4 py-1 text-sm text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+                >
+                    <option value="" className="bg-background">Fulfillment Status: All</option>
+                    {ORDER_STATUSES.map(s => (
+                        <option key={s.value} value={s.value} className="bg-background">{s.label}</option>
+                    ))}
+                </select>
+            </div>
+          </div>
+
+          <div className="relative">
+            {loading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                <Loader2 className="h-12 w-12 animate-spin text-primary shadow-glow-red" />
               </div>
             )}
-          </>
-        )}
-      </div>
-
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create order">
-        <form onSubmit={handleCreate} className="space-y-4">
-          {formErrors._ && (
-            <Alert variant="error" onDismiss={() => setFormErrors((e) => ({ ...e, _: '' }))}>
-              {formErrors._}
-            </Alert>
-          )}
-          <Select
-            label="Product"
-            name="product_id"
-            value={createForm.product_id}
-            onChange={(e) => setCreateForm((p) => ({ ...p, product_id: e.target.value }))}
-            options={products.map((p) => ({ value: p.id, label: `${p.name} (${formatCurrency(p.price)})` }))}
-            error={formErrors.product_id}
-            required
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-            <input
-              type="number"
-              min="1"
-              value={createForm.quantity}
-              onChange={(e) => setCreateForm((p) => ({ ...p, quantity: e.target.value }))}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
-            />
-            {formErrors.quantity && (
-              <p className="mt-1 text-sm text-red-600">{formErrors.quantity}</p>
-            )}
-          </div>
-          <Select
-            label="Status"
-            name="status"
-            value={createForm.status}
-            onChange={(e) => setCreateForm((p) => ({ ...p, status: e.target.value }))}
-            options={ORDER_STATUSES}
-          />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitLoading}>
-              {submitLoading ? (
-                <>
-                  <Spinner size="sm" className="mr-2" />
-                  Creating...
-                </>
-              ) : (
-                'Create'
-              )}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit order">
-        {selectedOrder && (
-          <form onSubmit={handleEdit} className="space-y-4">
-            {formErrors._ && (
-              <Alert variant="error" onDismiss={() => setFormErrors((e) => ({ ...e, _: '' }))}>
-                {formErrors._}
-              </Alert>
-            )}
-            <p className="text-sm text-gray-600">
-              Order #{selectedOrder.id} — {selectedOrder.product?.name} × {selectedOrder.quantity}
-            </p>
-            <Select
-              label="Status"
-              name="status"
-              value={editForm.status}
-              onChange={(e) => setEditForm((p) => ({ ...p, status: e.target.value }))}
-              options={ORDER_STATUSES}
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitLoading}>
-                {submitLoading ? (
-                  <>
-                    <Spinner size="sm" className="mr-2" />
-                    Saving...
-                  </>
+            
+            <Table>
+              <TableHeader className="bg-white/[0.01]">
+                <TableRow className="hover:bg-transparent border-white/5">
+                  <TableHead className="w-[100px] text-slate-500 font-black uppercase tracking-widest text-[10px]">Reference</TableHead>
+                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Client</TableHead>
+                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Entitlement</TableHead>
+                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Valuation</TableHead>
+                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Fulfillment</TableHead>
+                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Timestamp</TableHead>
+                  <TableHead className="text-right text-slate-500 font-black uppercase tracking-widest text-[10px]">Operations</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {list?.data?.length === 0 ? (
+                  <TableRow className="border-white/5 hover:bg-transparent">
+                    <TableCell colSpan={7} className="h-48 text-center text-slate-600 font-bold uppercase tracking-widest text-xs">
+                      No transactions detected in the stream.
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  'Save'
+                  list?.data?.map((order) => (
+                    <TableRow key={order.id} className="border-white/5 hover:bg-white/[0.03] transition-all group">
+                      <TableCell className="font-mono text-xs text-slate-700">#{order.id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                                <span className="text-[10px] font-black text-primary uppercase">C{order.user_id || '?'}</span>
+                            </div>
+                            <span className="text-sm font-bold text-white tracking-tight">Client #{order.user_id || 'Alpha'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-white group-hover:text-primary transition-colors">{order.product?.name ?? 'Ghost Asset'}</span>
+                          <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Quantity: <span className="text-white">{order.quantity}</span> units</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-black text-white text-lg">
+                        {formatCurrency(order.total_price)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(order.status)} className="px-4 py-1 font-black uppercase tracking-tighter shadow-sm animate-pulse">
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                        {formatDate(order.created_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(order)} className="h-10 w-10 text-slate-500 hover:text-white hover:bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all">
+                          <Edit3 className="h-5 w-5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between p-8 border-t border-white/5 bg-white/[0.01] gap-6">
+            <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">
+              Processing <span className="text-white">{list?.data?.length ?? 0}</span> of <span className="text-white">{total}</span> signals
+            </p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+                className="h-10 w-10 rounded-full border-white/10 hover:bg-white/10 text-white disabled:opacity-20"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-primary shadow-glow-red">{page}</span>
+                <span className="text-xs text-slate-700 font-bold">/</span>
+                <span className="text-xs font-black text-slate-500 px-2">{lastPage}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={page >= lastPage}
+                onClick={() => setPage(p => p + 1)}
+                className="h-10 w-10 rounded-full border-white/10 hover:bg-white/10 text-white disabled:opacity-20"
+              >
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
-          </form>
-        )}
-      </Modal>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialogs */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-[550px] bg-background border-white/10 p-0 overflow-hidden shadow-netflix">
+          <div className="h-2 bg-primary w-full animate-pulse" />
+          <div className="p-8 space-y-6">
+            <DialogHeader>
+              <DialogTitle className="text-3xl font-black text-white uppercase italic tracking-tighter">Forge Transaction</DialogTitle>
+              <DialogDescription className="text-slate-500 font-bold uppercase tracking-widest text-xs">Log a manual transaction event into the stream.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Secure Asset Select</Label>
+                <select 
+                  className="flex h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={createForm.product_id}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, product_id: e.target.value }))}
+                >
+                  <option value="" className="bg-background">Choose allocation target...</option>
+                  {products.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-background">{p.name} ({formatCurrency(p.price)})</option>
+                  ))}
+                </select>
+                {formErrors.product_id && <p className="text-xs font-bold text-destructive italic">{formErrors.product_id}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Allocation Volume</Label>
+                      <Input type="number" min="1" value={createForm.quantity} onChange={(e) => setCreateForm(p => ({ ...p, quantity: e.target.value }))} className="bg-black/40 border-white/10 text-white h-12" />
+                      {formErrors.quantity && <p className="text-xs font-bold text-destructive italic">{formErrors.quantity}</p>}
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Initial State</Label>
+                      <select 
+                          className="flex h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          value={createForm.status}
+                          onChange={(e) => setCreateForm(p => ({ ...p, status: e.target.value }))}
+                      >
+                          {ORDER_STATUSES.map(s => <option key={s.value} value={s.value} className="bg-background">{s.label}</option>)}
+                      </select>
+                  </div>
+              </div>
+              <DialogFooter className="pt-6">
+                <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Abort</Button>
+                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-red">
+                  {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                  Execute Transaction
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-[450px] bg-background border-white/10 p-0 overflow-hidden shadow-netflix">
+          <div className="h-2 bg-primary w-full animate-pulse" />
+          <div className="p-8 space-y-6">
+            <DialogHeader>
+              <DialogTitle className="text-3xl font-black text-white uppercase italic tracking-tighter">Protocol Update</DialogTitle>
+              <DialogDescription className="text-slate-500 font-bold uppercase tracking-widest text-xs">Modify fulfillment state for Registry #{selectedOrder?.id}.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEdit} className="space-y-6 text-center">
+              <div className="rounded-2xl bg-white/[0.02] p-6 border border-white/5 shadow-inner">
+                  <div className="flex flex-col items-center gap-4">
+                      <div className="h-14 w-14 rounded-2xl bg-primary/10 shadow-glow-red flex items-center justify-center border border-primary/20">
+                          <PackageOpen className="h-8 w-8 text-primary" />
+                      </div>
+                      <div>
+                          <p className="text-lg font-black text-white tracking-tighter uppercase">{selectedOrder?.product?.name}</p>
+                          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Payload: {selectedOrder?.quantity} Units</p>
+                      </div>
+                  </div>
+              </div>
+              <div className="space-y-2 text-left">
+                  <Label className="text-xs font-black uppercase tracking-widest text-slate-600">New Fulfillment State</Label>
+                  <select 
+                      className="flex h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      value={editForm.status}
+                      onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value }))}
+                  >
+                      {ORDER_STATUSES.map(s => <option key={s.value} value={s.value} className="bg-background">{s.label}</option>)}
+                  </select>
+              </div>
+              <DialogFooter className="pt-6">
+                <Button type="button" variant="ghost" onClick={() => setEditOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Negative, Abort</Button>
+                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-red">
+                  {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                  Commit State
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
