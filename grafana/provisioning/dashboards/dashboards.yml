@@ -1,0 +1,17 @@
+# Grafana dashboard provisioning
+# Loaded automatically at startup from /etc/grafana/provisioning/dashboards/
+# Dashboards placed in ./dashboards/ (mounted as /etc/grafana/provisioning/dashboards/json) are loaded into the folder below.
+
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: 'Ecommerce Observability'
+    folderUid: 'ecommerce'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

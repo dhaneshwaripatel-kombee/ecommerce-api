@@ -1,0 +1,23 @@
+# Prometheus configuration
+# Scrape interval applied globally; can be overridden per job.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Laravel backend metrics (endpoint: /metrics, port: 9000)
+  - job_name: 'laravel-backend'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['laravel:9000']
+        labels:
+          service: 'laravel-api'
+          env: 'production'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'

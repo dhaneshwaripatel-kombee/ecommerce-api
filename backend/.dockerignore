@@ -1,0 +1,51 @@
+# Dependencies (reinstalled in container)
+/vendor
+/node_modules
+frontend/node_modules
+
+# Git and IDE
+.git
+.gitignore
+.idea
+.vscode
+*.swp
+*.swo
+
+# Env and secrets (mount at runtime)
+.env
+.env.*
+!.env.example
+
+# Build and cache
+frontend/dist
+bootstrap/cache/*
+!bootstrap/cache/.gitkeep
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+!storage/logs/.gitkeep
+!storage/framework/cache/.gitkeep
+!storage/framework/sessions/.gitkeep
+!storage/framework/views/.gitkeep
+
+# Tests and dev
+tests
+phpunit.xml
+.phpunit.result.cache
+coverage
+.phan
+.phpunit.cache
+
+# Docs and misc
+*.md
+!README.md
+postman
+.docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db

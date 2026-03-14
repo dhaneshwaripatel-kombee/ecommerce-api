@@ -1,0 +1,132 @@
+# =============================
+# Environment & secrets
+# =============================
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+.env.local
+.env.*.local
+*.pem
+
+# =============================
+# Laravel
+# =============================
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/public/mix-manifest.json
+/storage/*.key
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/pail
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+.phpunit.result.cache
+.phpunit.cache
+.phpactor.json
+Homestead.json
+Homestead.yaml
+auth.json
+
+# =============================
+# React / Node / Frontend
+# =============================
+node_modules
+frontend/node_modules
+**/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+dist
+build
+frontend/dist
+**/dist
+**/build
+*.tsbuildinfo
+.vite
+.cache
+.parcel-cache
+.next
+.nuxt
+.output
+coverage
+.nyc_output
+
+# =============================
+# Build artifacts
+# =============================
+*.log
+*.min.js
+*.min.css
+*.map
+!public/*.map
+
+# =============================
+# IDE & editors
+# =============================
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+.fleet
+.nova
+.zed
+*.swp
+*.swo
+*~
+
+# =============================
+# OS
+# =============================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =============================
+# Docker
+# =============================
+.docker
+*.log
+docker-compose.override.yml
+docker-compose.*.local.yml
+
+# =============================
+# Testing & tools
+# =============================
+.phan
+.phpmd
+phpunit.xml.bak
+.php-cs-fixer.cache
+.phpunit.cache
+coverage/
+.clover
+.env.testing
+
+# =============================
+# Misc
+# =============================
+*.bak
+*.tmp
+*.temp
+.cache

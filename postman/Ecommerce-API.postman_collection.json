@@ -1,0 +1,594 @@
+{
+	"info": {
+		"_postman_id": "ecommerce-api-collection",
+		"name": "Ecommerce API",
+		"description": "API collection for the Laravel E-commerce API.\n\n**Setup:**\n1. Set `base_url` to your server (e.g. `http://localhost:8000`).\n2. Run **Login** or **Register** and the `token` variable will be set automatically for protected requests.\n3. For Products/Orders create/update/delete, ensure you have a valid token.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "product_id",
+			"value": "1"
+		},
+		{
+			"key": "order_id",
+			"value": "1"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "register"]
+						},
+						"description": "Register a new user. Returns user and token. Optional: `device_name` for token name."
+					},
+					"response": [
+						{
+							"name": "Success (201)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/v1/register",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "register"]
+								}
+							},
+							"status": "OK",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"message\": \"User registered successfully\",\n  \"data\": {\n    \"user\": {\n      \"id\": 1,\n      \"name\": \"Jane Doe\",\n      \"email\": \"jane@example.com\"\n    },\n    \"token\": \"1|abc123...\",\n    \"token_type\": \"Bearer\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const json = pm.response.json();",
+									"    if (json.data && json.data.token) {",
+									"        pm.collectionVariables.set('token', json.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "login"]
+						},
+						"description": "Login. Saves token to collection variable for protected requests. Optional: `device_name`."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"password\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/v1/login",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": 1,\n      \"name\": \"Jane Doe\",\n      \"email\": \"jane@example.com\"\n    },\n    \"token\": \"1|abc123...\",\n    \"token_type\": \"Bearer\"\n  }\n}"
+						},
+						{
+							"name": "Invalid credentials (401)",
+							"originalRequest": { "method": "POST" },
+							"status": "Unauthorized",
+							"code": 401,
+							"body": "{\n  \"success\": false,\n  \"message\": \"Invalid credentials\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/logout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "logout"]
+						},
+						"description": "Revoke current token. Requires Bearer token."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Logged out successfully\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Create product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Wireless Mouse\",\n  \"description\": \"Ergonomic wireless mouse with long battery life.\",\n  \"price\": 29.99,\n  \"stock\": 150\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Create a new product. Requires authentication."
+					},
+					"response": [
+						{
+							"name": "Success (201)",
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Product created\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Wireless Mouse\",\n    \"description\": \"Ergonomic wireless mouse with long battery life.\",\n    \"price\": \"29.99\",\n    \"stock\": 150,\n    \"created_at\": \"2025-03-13T12:00:00.000000Z\",\n    \"updated_at\": \"2025-03-13T12:00:00.000000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "List products (pagination)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products?per_page=15&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15",
+									"description": "Items per page (1-100)"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						},
+						"description": "List products with pagination. Query: per_page (1-100), page."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Products retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1,\n        \"name\": \"Wireless Mouse\",\n        \"description\": \"Ergonomic wireless mouse.\",\n        \"price\": \"29.99\",\n        \"stock\": 150,\n        \"created_at\": \"2025-03-13T12:00:00.000000Z\",\n        \"updated_at\": \"2025-03-13T12:00:00.000000Z\"\n      }\n    ],\n    \"first_page_url\": \"http://localhost:8000/api/v1/products?page=1\",\n    \"from\": 1,\n    \"last_page\": 5,\n    \"last_page_url\": \"http://localhost:8000/api/v1/products?page=5\",\n    \"per_page\": 15,\n    \"to\": 15,\n    \"total\": 200\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Filter products by name",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products?name=Mouse&per_page=15",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"],
+							"query": [
+								{
+									"key": "name",
+									"value": "Mouse",
+									"description": "Partial match on product name"
+								},
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						},
+						"description": "Filter by name (partial match). You can also use price_min and price_max."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Products retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1,\n        \"name\": \"Wireless Mouse\",\n        \"price\": \"29.99\",\n        \"stock\": 150\n      }\n    ],\n    \"per_page\": 15,\n    \"total\": 1\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get single product",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						},
+						"description": "Get one product by ID. Set product_id variable or use a number."
+					},
+					"response": []
+				},
+				{
+					"name": "Update product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Wireless Mouse Pro\",\n  \"description\": \"Updated description.\",\n  \"price\": 34.99,\n  \"stock\": 120\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						},
+						"description": "Update product. All fields optional (use only what you want to change)."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Product updated\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Wireless Mouse Pro\",\n    \"description\": \"Updated description.\",\n    \"price\": \"34.99\",\n    \"stock\": 120,\n    \"created_at\": \"2025-03-13T12:00:00.000000Z\",\n    \"updated_at\": \"2025-03-13T12:05:00.000000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						},
+						"description": "Delete a product by ID."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Product deleted\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2,\n  \"status\": \"pending\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"]
+						},
+						"description": "Create order. total_price is calculated (product price × quantity). Stock is decremented. status optional (default: pending)."
+					},
+					"response": [
+						{
+							"name": "Success (201)",
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Order created\",\n  \"data\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"product_id\": 1,\n    \"quantity\": 2,\n    \"total_price\": \"59.98\",\n    \"status\": \"pending\",\n    \"created_at\": \"2025-03-13T12:00:00.000000Z\",\n    \"updated_at\": \"2025-03-13T12:00:00.000000Z\",\n    \"product\": {\n      \"id\": 1,\n      \"name\": \"Wireless Mouse\",\n      \"price\": \"29.99\",\n      \"stock\": 148\n    }\n  }\n}"
+						},
+						{
+							"name": "Validation / Business error (422)",
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"body": "{\n  \"success\": false,\n  \"message\": \"Insufficient stock.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders?per_page=15&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Optional: pending, confirmed, shipped, delivered, cancelled",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List orders for the authenticated user. Optional: status filter."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Orders retrieved successfully\",\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1,\n        \"user_id\": 1,\n        \"product_id\": 1,\n        \"quantity\": 2,\n        \"total_price\": \"59.98\",\n        \"status\": \"pending\",\n        \"product\": {\n          \"id\": 1,\n          \"name\": \"Wireless Mouse\",\n          \"price\": \"29.99\"\n        }\n      }\n    ],\n    \"per_page\": 15,\n    \"total\": 10\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get single order",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Get one order by ID (must belong to authenticated user)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update order",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"confirmed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Update order (e.g. status). Only status can be updated. Values: pending, confirmed, shipped, delivered, cancelled."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Order updated\",\n  \"data\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"product_id\": 1,\n    \"quantity\": 2,\n    \"total_price\": \"59.98\",\n    \"status\": \"confirmed\",\n    \"created_at\": \"2025-03-13T12:00:00.000000Z\",\n    \"updated_at\": \"2025-03-13T12:10:00.000000Z\",\n    \"product\": {\n      \"id\": 1,\n      \"name\": \"Wireless Mouse\",\n      \"price\": \"29.99\"\n    }\n  }\n}"
+						},
+						{
+							"name": "Not found (404)",
+							"status": "Not Found",
+							"code": 404,
+							"body": "{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete order",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Delete an order (must belong to authenticated user)."
+					},
+					"response": [
+						{
+							"name": "Success (200)",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Order deleted\"\n}"
+						},
+						{
+							"name": "Not found (404)",
+							"status": "Not Found",
+							"code": 404,
+							"body": "{\n  \"success\": false,\n  \"message\": \"Order not found\"\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

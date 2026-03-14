@@ -1,0 +1,99 @@
+# Monitoring stack: Prometheus, Loki, Promtail, Grafana
+# Usage: docker-compose -f docker-compose.monitoring.yml up -d
+#
+# For Promtail to read Docker container logs (Linux):
+#   - /var/lib/docker/containers must be mounted (path where Docker stores JSON log files)
+#   - /var/run/docker.sock for container discovery
+# On Windows (Docker Desktop): run this stack from WSL2 or ensure Docker Desktop exposes these paths.
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Docker container log path (Linux host); on Windows use WSL2 or Docker Desktop equivalent
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: tempo
+    restart: unless-stopped
+    ports:
+      - "3200:3200"   # Tempo API / UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./tempo/config.yml:/etc/tempo/config.yaml:ro
+      - tempo_data:/var/tempo
+    command: [ "-config.file=/etc/tempo/config.yaml" ]
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+      - tempo
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+  tempo_data:
+
+networks:
+  monitoring:
+    driver: bridge
