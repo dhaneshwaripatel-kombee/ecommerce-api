@@ -23,17 +23,9 @@ services:
       DB_DATABASE: observability_db
       DB_USERNAME: app_user
       DB_PASSWORD: app_password
-      CACHE_STORE: redis
-      REDIS_HOST: redis
-      SESSION_DRIVER: redis
     depends_on:
       mysql:
         condition: service_healthy
-      redis:
-        condition: service_started
-    working_dir: /var/www/html
-    volumes:
-      - ./backend:/var/www/html
     networks:
       - observability_network
 
@@ -58,29 +50,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ecommerce-frontend
-    restart: unless-stopped
-    ports:
-      - "5173:5173"
-    depends_on:
-      - laravel
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - observability_network
-
-  redis:
-    image: redis:alpine
-    container_name: redis
-    restart: unless-stopped
-    networks:
-      - observability_network
 
 volumes:
   mysql_data:

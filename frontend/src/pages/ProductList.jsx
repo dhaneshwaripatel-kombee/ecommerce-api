@@ -1,31 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { Card, CardContent } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table"
+import { Alert } from '../components/Alert'
+import { Button } from '../components/Button'
+import { Input } from '../components/Input'
+import { Modal } from '../components/Modal'
+import { Select } from '../components/Select'
+import { Spinner } from '../components/Spinner'
+import { Table } from '../components/Table'
 import { useToast } from '../contexts/ToastContext'
 import { productService } from '../services/productService'
 import { getApiErrorMessage, getApiValidationErrors } from '../utils/apiError'
-import { DEFAULT_PER_PAGE } from '../utils/constants'
+import { DEFAULT_PER_PAGE, PER_PAGE_OPTIONS } from '../utils/constants'
 import { formatCurrency } from '../utils/format'
-import { Package, Plus, Search, Edit2, Trash2, Loader2, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react'
 
 const initialProductForm = { name: '', description: '', price: '', stock: '' }
 
@@ -33,8 +18,9 @@ export default function ProductList() {
   const toast = useToast()
   const [list, setList] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [page, setPage] = useState(1)
-  const [perPage] = useState(DEFAULT_PER_PAGE)
+  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE)
   const [nameFilter, setNameFilter] = useState('')
   const [sortPrice, setSortPrice] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
@@ -45,11 +31,13 @@ export default function ProductList() {
   const [formErrors, setFormErrors] = useState({})
   const [submitLoading, setSubmitLoading] = useState(false)
 
+  // Keep current params in a ref so refreshList always uses latest values when called from handlers
   const paramsRef = useRef({ page, perPage, nameFilter, sortPrice })
   paramsRef.current = { page, perPage, nameFilter, sortPrice }
 
   const fetchList = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       const { page: p, perPage: pp, nameFilter: nf, sortPrice: sp } = paramsRef.current
       const params = { page: p, per_page: pp }
@@ -59,6 +47,26 @@ export default function ProductList() {
       setList(data)
     } catch (err) {
       const message = getApiErrorMessage(err)
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, perPage, nameFilter, sortPrice, toast])
+
+  const refreshList = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const { page: p, perPage: pp, nameFilter: nf, sortPrice: sp } = paramsRef.current
+      const params = { page: p, per_page: pp }
+      if (nf?.trim()) params.name = nf.trim()
+      if (sp) params.sort_price = sp
+      const data = await productService.list(params)
+      setList(data)
+    } catch (err) {
+      const message = getApiErrorMessage(err)
+      setError(message)
       toast.error(message)
     } finally {
       setLoading(false)
@@ -66,12 +74,8 @@ export default function ProductList() {
   }, [toast])
 
   useEffect(() => {
-    const shouldDebounce = nameFilter !== ''
-    const timer = setTimeout(() => {
-        fetchList()
-    }, shouldDebounce ? 500 : 0)
-    return () => clearTimeout(timer)
-  }, [fetchList, nameFilter, sortPrice, page])
+    fetchList()
+  }, [fetchList])
 
   const openCreate = () => {
     setForm(initialProductForm)
@@ -120,13 +124,14 @@ export default function ProductList() {
       })
       setCreateOpen(false)
       toast.success('Product created successfully.')
-      fetchList()
+      fetchList() // refresh list so new product appears
     } catch (err) {
       const validation = getApiValidationErrors(err)
       if (Object.keys(validation).length > 0) {
         setFormErrors(validation)
         toast.error('Please fix the validation errors.')
       } else {
+        setFormErrors({ _: getApiErrorMessage(err) })
         toast.error(getApiErrorMessage(err))
       }
     } finally {
@@ -148,13 +153,14 @@ export default function ProductList() {
       setEditOpen(false)
       setSelectedProduct(null)
       toast.success('Product updated successfully.')
-      fetchList()
+      fetchList() // refresh list so updated product is shown
     } catch (err) {
       const validation = getApiValidationErrors(err)
       if (Object.keys(validation).length > 0) {
         setFormErrors(validation)
         toast.error('Please fix the validation errors.')
       } else {
+        setFormErrors({ _: getApiErrorMessage(err) })
         toast.error(getApiErrorMessage(err))
       }
     } finally {
@@ -172,7 +178,9 @@ export default function ProductList() {
       toast.success('Product deleted successfully.')
       fetchList()
     } catch (err) {
-      toast.error(getApiErrorMessage(err))
+      const message = getApiErrorMessage(err)
+      setFormErrors({ _: message })
+      toast.error(message)
     } finally {
       setSubmitLoading(false)
     }
@@ -183,266 +191,195 @@ export default function ProductList() {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const lastPage = list?.last_page ?? 1
+  const columns = [
+    { key: 'id', header: 'ID', width: '80px' },
+    { key: 'name', header: 'Name' },
+    { key: 'description', header: 'Description', render: (v) => (v ? (v.length > 50 ? v.slice(0, 50) + '…' : v) : '—') },
+    { key: 'price', header: 'Price', render: (v) => formatCurrency(v) },
+    { key: 'stock', header: 'Stock' },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (_, row) => (
+        <div className="flex gap-2">
+          <Button size="sm" variant="secondary" onClick={() => openEdit(row)}>
+            Edit
+          </Button>
+          <Button size="sm" variant="danger" onClick={() => openDelete(row)}>
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ]
+
+  const paginatedData = list?.data ?? []
   const total = list?.total ?? 0
+  const lastPage = list?.last_page ?? 1
 
   return (
-    <div className="space-y-12">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase">Vault Catalog</h1>
-          <div className="flex items-center gap-2 text-primary font-bold tracking-widest text-xs uppercase">
-            <Package className="h-4 w-4" />
-            Inventory Control
-          </div>
-        </div>
-        <Button onClick={openCreate} className="h-12 px-8 text-base font-black uppercase tracking-widest bg-primary text-white shadow-glow-purple hover:shadow-primary/40">
-          <Plus className="h-5 w-5 mr-2" />
-          Acquire Item
-        </Button>
+    <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+        <Button onClick={openCreate}>Create product</Button>
       </div>
 
-      <Card className="border-white/5 bg-white/5 shadow-netflix overflow-hidden">
-        <CardContent className="p-0">
-          <div className="flex flex-col lg:flex-row items-center gap-6 p-8 border-b border-white/5 bg-white/[0.02]">
-            <div className="relative w-full lg:max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600" />
-              <Input
-                placeholder="Search the archives..."
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-                className="pl-12 bg-black/40 border-white/10 text-white placeholder:text-slate-700 h-12 rounded-xl focus-visible:ring-primary/50"
-              />
-            </div>
-            <div className="flex items-center gap-4 w-full lg:w-auto">
-                <SlidersHorizontal className="h-5 w-5 text-slate-600 ml-2" />
-                <select 
-                    className="h-12 w-full lg:w-64 rounded-xl border border-white/10 bg-black/40 px-4 py-1 text-sm text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    value={sortPrice}
-                    onChange={(e) => setSortPrice(e.target.value)}
-                >
-                    <option value="" className="bg-background">Sort by Value</option>
-                    <option value="asc" className="bg-background">Value: Low to High</option>
-                    <option value="desc" className="bg-background">Value: High to Low</option>
-                </select>
-            </div>
-          </div>
+      {error && (
+        <Alert variant="error" className="mt-4" onDismiss={() => setError('')}>
+          {error}
+        </Alert>
+      )}
 
-          <div className="relative">
-            {loading && !list && (
-              <div className="p-8 space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center space-x-4">
-                    <div className="h-12 w-full animate-pulse rounded-xl bg-white/5" />
-                  </div>
-                ))}
+      <div className="mt-6 flex flex-wrap items-center gap-4">
+        <Input
+          placeholder="Filter by name..."
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select
+          placeholder="Sort by price"
+          value={sortPrice}
+          onChange={(e) => setSortPrice(e.target.value)}
+          options={[
+            { value: 'asc', label: 'Price: Low to High' },
+            { value: 'desc', label: 'Price: High to Low' },
+          ]}
+          className="w-48"
+        />
+        <Select
+          value={perPage}
+          onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }}
+          options={PER_PAGE_OPTIONS.map((n) => ({ value: n, label: `${n} per page` }))}
+          className="w-36"
+        />
+      </div>
+
+      <div className="mt-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-12">
+            <Spinner size="lg" />
+            <p className="text-gray-500">Loading products...</p>
+          </div>
+        ) : (
+          <>
+            <Table columns={columns} data={paginatedData} emptyMessage="No products found." />
+            {lastPage > 1 && (
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  Showing page {page} of {lastPage} ({total} total)
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page >= lastPage}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
-            
-            <Table>
-              <TableHeader className="bg-white/[0.01]">
-                <TableRow className="hover:bg-transparent border-white/5">
-                  <TableHead className="w-[100px] text-slate-500 font-black uppercase tracking-widest text-[10px]">Registry ID</TableHead>
-                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Entity</TableHead>
-                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Valuation</TableHead>
-                  <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Allocation</TableHead>
-                  <TableHead className="text-right text-slate-500 font-black uppercase tracking-widest text-[10px]">Operations</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading && !list ? null : (list?.data?.length === 0 ? (
-                  <TableRow className="border-white/5 hover:bg-transparent">
-                    <TableCell colSpan={5} className="h-48 text-center text-slate-600 font-bold uppercase tracking-widest text-xs">
-                      The archives are empty.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  list?.data?.map((product) => (
-                    <TableRow key={product.id} className="border-white/5 hover:bg-white/[0.03] transition-all group">
-                      <TableCell className="font-mono text-xs text-slate-700">#{product.id}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-black text-white group-hover:text-primary transition-colors">{product.name}</span>
-                          <span className="text-xs text-slate-500 line-clamp-1 max-w-[400px]">
-                            {product.description || 'Null pointer description'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-black text-white text-lg">
-                        {formatCurrency(product.price)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={product.stock > 10 ? "success" : product.stock > 0 ? "warning" : "destructive"}
-                          className="px-4 py-1 font-black uppercase tracking-tighter shadow-sm"
-                        >
-                          {product.stock} units
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-3 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(product)} className="h-10 w-10 text-slate-500 hover:text-white hover:bg-white/10 rounded-full">
-                            <Edit2 className="h-5 w-5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => openDelete(product)} className="h-10 w-10 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-full">
-                            <Trash2 className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          </>
+        )}
+      </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between p-8 border-t border-white/5 bg-white/[0.01] gap-6">
-            <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">
-              Synchronizing <span className="text-white">{list?.data?.length ?? 0}</span> of <span className="text-white">{total}</span> assets
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create product" size="lg">
+        <form onSubmit={handleCreate} className="space-y-4">
+          {formErrors._ && (
+            <Alert variant="error" onDismiss={() => setFormErrors((e) => ({ ...e, _: '' }))}>
+              {formErrors._}
+            </Alert>
+          )}
+          <Input label="Name" name="name" value={form.name} onChange={handleFormChange} error={formErrors.name} required />
+          <Input label="Description" name="description" value={form.description} onChange={handleFormChange} error={formErrors.description} />
+          <Input label="Price" name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleFormChange} error={formErrors.price} required />
+          <Input label="Stock" name="stock" type="number" min="0" value={form.stock} onChange={handleFormChange} error={formErrors.stock} required />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitLoading}>
+              {submitLoading ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Create'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit product" size="lg">
+        <form onSubmit={handleEdit} className="space-y-4">
+          {formErrors._ && (
+            <Alert variant="error" onDismiss={() => setFormErrors((e) => ({ ...e, _: '' }))}>
+              {formErrors._}
+            </Alert>
+          )}
+          <Input label="Name" name="name" value={form.name} onChange={handleFormChange} error={formErrors.name} required />
+          <Input label="Description" name="description" value={form.description} onChange={handleFormChange} error={formErrors.description} />
+          <Input label="Price" name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleFormChange} error={formErrors.price} required />
+          <Input label="Stock" name="stock" type="number" min="0" value={form.stock} onChange={handleFormChange} error={formErrors.stock} required />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitLoading}>
+              {submitLoading ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete product">
+        {selectedProduct && (
+          <>
+            <p className="text-gray-600">
+              Are you sure you want to delete <strong>{selectedProduct.name}</strong>? This cannot be undone.
             </p>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-                className="h-10 w-10 rounded-full border-white/10 hover:bg-white/10 text-white disabled:opacity-20"
-              >
-                <ChevronLeft className="h-5 w-5" />
+            {formErrors._ && (
+              <Alert variant="error" className="mt-2">
+                {formErrors._}
+              </Alert>
+            )}
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setDeleteOpen(false)}>
+                Cancel
               </Button>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-primary shadow-glow-purple">{page}</span>
-                <span className="text-xs text-slate-700 font-bold">/</span>
-                <span className="text-xs font-black text-slate-500 px-2">{lastPage}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={page >= lastPage}
-                onClick={() => setPage(p => p + 1)}
-                className="h-10 w-10 rounded-full border-white/10 hover:bg-white/10 text-white disabled:opacity-20"
-              >
-                <ChevronRight className="h-5 w-5" />
+              <Button variant="danger" onClick={handleDelete} disabled={submitLoading}>
+                {submitLoading ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
               </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Forms & Dialogs */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-[550px] bg-background border-white/10 p-0 overflow-hidden shadow-netflix">
-          <div className="h-2 bg-primary w-full animate-pulse" />
-          <div className="p-8 space-y-6">
-            <DialogHeader>
-              <DialogTitle className="text-3xl font-black text-white uppercase italic tracking-tighter">Manifest Entity</DialogTitle>
-              <DialogDescription className="text-slate-500 font-bold uppercase tracking-widest text-xs">Inject new data into the global catalog.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Entity Name</Label>
-                <Input name="name" value={form.name} onChange={handleFormChange} placeholder="Cyberware Optic..." className="bg-black/40 border-white/10 text-white h-12" />
-                {formErrors.name && <p className="text-xs font-bold text-destructive italic">{formErrors.name}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Physical Spec</Label>
-                <textarea 
-                  name="description"
-                  className="flex min-h-[120px] w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="Enhanced visual sensory array..."
-                  value={form.description}
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Credit Value ($)</Label>
-                  <Input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleFormChange} className="bg-black/40 border-white/10 text-white h-12" />
-                  {formErrors.price && <p className="text-xs font-bold text-destructive italic">{formErrors.price}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Archive Count</Label>
-                  <Input name="stock" type="number" min="0" value={form.stock} onChange={handleFormChange} className="bg-black/40 border-white/10 text-white h-12" />
-                  {formErrors.stock && <p className="text-xs font-bold text-destructive italic">{formErrors.stock}</p>}
-                </div>
-              </div>
-              <DialogFooter className="pt-6">
-                <Button type="button" variant="ghost" onClick={() => setCreateOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Abort</Button>
-                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-purple">
-                  {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  Manifest Now
-                </Button>
-              </DialogFooter>
-            </form>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[550px] bg-background border-white/10 p-0 overflow-hidden shadow-netflix">
-          <div className="h-2 bg-primary w-full animate-pulse" />
-          <div className="p-8 space-y-6">
-            <DialogHeader>
-              <DialogTitle className="text-3xl font-black text-white uppercase italic tracking-tighter">Modify Sequence</DialogTitle>
-              <DialogDescription className="text-slate-500 font-bold uppercase tracking-widest text-xs">Update asset parameters and valuation.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleEdit} className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Entity Name</Label>
-                <Input name="name" value={form.name} onChange={handleFormChange} className="bg-black/40 border-white/10 text-white h-12" />
-                {formErrors.name && <p className="text-xs font-bold text-destructive italic">{formErrors.name}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Physical Spec</Label>
-                <textarea 
-                  name="description"
-                  className="flex min-h-[120px] w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  value={form.description}
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Credit Value ($)</Label>
-                  <Input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleFormChange} className="bg-black/40 border-white/10 text-white h-12" />
-                  {formErrors.price && <p className="text-xs font-bold text-destructive italic">{formErrors.price}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-slate-600">Archive Count</Label>
-                  <Input name="stock" type="number" min="0" value={form.stock} onChange={handleFormChange} className="bg-black/40 border-white/10 text-white h-12" />
-                  {formErrors.stock && <p className="text-xs font-bold text-destructive italic">{formErrors.stock}</p>}
-                </div>
-              </div>
-              <DialogFooter className="pt-6">
-                <Button type="button" variant="ghost" onClick={() => setEditOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Abort</Button>
-                <Button type="submit" disabled={submitLoading} className="h-12 px-8 bg-primary text-white font-black uppercase tracking-widest shadow-glow-purple">
-                  {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  Commit Edits
-                </Button>
-              </DialogFooter>
-            </form>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-[450px] bg-background border-primary/20 p-8 shadow-glow-purple">
-          <DialogHeader className="space-y-4">
-            <DialogTitle className="text-3xl font-black text-primary uppercase italic tracking-tighter">Purge Protocol</DialogTitle>
-            <DialogDescription className="text-white font-bold text-base leading-relaxed">
-              Are you certain you wish to purge <span className="text-primary tracking-tight">"{selectedProduct?.name}"</span> from the global registry? This procedure is irreversible.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="pt-8 gap-4 sm:flex-row flex-col">
-            <Button variant="ghost" onClick={() => setDeleteOpen(false)} className="h-12 text-slate-500 font-black uppercase tracking-widest">Negative, Abort</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={submitLoading} className="h-12 px-8 font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-              {submitLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              Execute Purge
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      </Modal>
     </div>
   )
 }
-
