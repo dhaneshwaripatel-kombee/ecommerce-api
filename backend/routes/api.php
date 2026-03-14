@@ -9,10 +9,13 @@ Route::prefix('v1')->group(function (): void {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
 
+    Route::get('products', [ProductController::class, 'index']);
+    Route::get('products/{product}', [ProductController::class, 'show']);
+
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('logout', [AuthController::class, 'logout']);
 
-        Route::apiResource('products', ProductController::class);
+        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
         Route::apiResource('orders', OrderController::class)->except(['update']);
         Route::patch('orders/{order}', [OrderController::class, 'update'])->name('orders.update');
     });

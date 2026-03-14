@@ -66,9 +66,10 @@ export default function ProductList() {
   }, [toast])
 
   useEffect(() => {
+    const shouldDebounce = nameFilter !== ''
     const timer = setTimeout(() => {
         fetchList()
-    }, nameFilter ? 300 : 0)
+    }, shouldDebounce ? 500 : 0)
     return () => clearTimeout(timer)
   }, [fetchList, nameFilter, sortPrice, page])
 
@@ -228,9 +229,13 @@ export default function ProductList() {
           </div>
 
           <div className="relative">
-            {loading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-                <Loader2 className="h-12 w-12 animate-spin text-primary shadow-glow-purple" />
+            {loading && !list && (
+              <div className="p-8 space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <div className="h-12 w-full animate-pulse rounded-xl bg-white/5" />
+                  </div>
+                ))}
               </div>
             )}
             
@@ -245,7 +250,7 @@ export default function ProductList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {list?.data?.length === 0 ? (
+                {loading && !list ? null : (list?.data?.length === 0 ? (
                   <TableRow className="border-white/5 hover:bg-transparent">
                     <TableCell colSpan={5} className="h-48 text-center text-slate-600 font-bold uppercase tracking-widest text-xs">
                       The archives are empty.
@@ -286,7 +291,7 @@ export default function ProductList() {
                       </TableCell>
                     </TableRow>
                   ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>

@@ -28,26 +28,47 @@ class ProductService
         $perPage = min(max($perPage, self::PER_PAGE_MIN), self::PER_PAGE_MAX);
         $filters = array_filter($filters, fn ($v) => $v !== null && $v !== '');
 
-        return $this->productRepository->paginate($perPage, $filters);
+        $cacheKey = 'products_list_' . md5(json_encode(array_merge($filters, ['per_page' => $perPage, 'page' => request('page', 1)])));
+
+        return \Illuminate\Support\Facades\Cache::tags(['products'])->remember($cacheKey, 3600, function () use ($perPage, $filters) {
+            return $this->productRepository->paginate($perPage, $filters);
+        });
     }
 
     public function getProduct(int $id): ?Product
     {
-        return $this->productRepository->find($id);
+        return \Illuminate\Support\Facades\Cache::tags(['products'])->remember("product_{$id}", 3600, function () use ($id) {
+            return $this->productRepository->find($id);
+        });
     }
 
     public function createProduct(array $data): Product
     {
-        return $this->productRepository->create($data);
+        $product = $this->productRepository->create($data);
+        $this->clearCache();
+        return $product;
     }
 
     public function updateProduct(Product $product, array $data): bool
     {
-        return $this->productRepository->update($product, $data);
+        $updated = $this->productRepository->update($product, $data);
+        if ($updated) {
+            $this->clearCache($product->id);
+        }
+        return $updated;
     }
 
     public function deleteProduct(Product $product): bool
     {
-        return $this->productRepository->delete($product);
+        $deleted = $this->productRepository->delete($product);
+        if ($deleted) {
+            $this->clearCache($product->id);
+        }
+        return $deleted;
+    }
+
+    private function clearCache(?int $productId = null): void
+    {
+        \Illuminate\Support\Facades\Cache::tags(['products'])->flush();
     }
 }

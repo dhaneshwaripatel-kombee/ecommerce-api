@@ -23,9 +23,15 @@ services:
       DB_DATABASE: observability_db
       DB_USERNAME: app_user
       DB_PASSWORD: app_password
+      CACHE_STORE: redis
+      REDIS_HOST: redis
+      SESSION_DRIVER: redis
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
+    working_dir: /var/www/html
     volumes:
       - ./backend:/var/www/html
     networks:
@@ -69,6 +75,12 @@ services:
     networks:
       - observability_network
 
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - observability_network
 
 volumes:
   mysql_data:
