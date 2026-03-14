@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert } from '../components/Alert'
 import { Button } from '../components/Button'
 import { Input } from '../components/Input'
@@ -15,6 +15,7 @@ import { formatCurrency } from '../utils/format'
 const initialProductForm = { name: '', description: '', price: '', stock: '' }
 
 export default function ProductList() {
+  const { toast } = useToast()
   const [list, setList] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -30,13 +31,18 @@ export default function ProductList() {
   const [formErrors, setFormErrors] = useState({})
   const [submitLoading, setSubmitLoading] = useState(false)
 
+  // Keep current params in a ref so refreshList always uses latest values when called from handlers
+  const paramsRef = useRef({ page, perPage, nameFilter, sortPrice })
+  paramsRef.current = { page, perPage, nameFilter, sortPrice }
+
   const fetchList = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const params = { page, per_page: perPage }
-      if (nameFilter.trim()) params.name = nameFilter.trim()
-      if (sortPrice) params.sort_price = sortPrice
+      const { page: p, perPage: pp, nameFilter: nf, sortPrice: sp } = paramsRef.current
+      const params = { page: p, per_page: pp }
+      if (nf?.trim()) params.name = nf.trim()
+      if (sp) params.sort_price = sp
       const data = await productService.list(params)
       setList(data)
     } catch (err) {
@@ -46,7 +52,26 @@ export default function ProductList() {
     } finally {
       setLoading(false)
     }
-  }, [page, perPage, nameFilter, sortPrice])
+  }, [page, perPage, nameFilter, sortPrice, toast])
+
+  const refreshList = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const { page: p, perPage: pp, nameFilter: nf, sortPrice: sp } = paramsRef.current
+      const params = { page: p, per_page: pp }
+      if (nf?.trim()) params.name = nf.trim()
+      if (sp) params.sort_price = sp
+      const data = await productService.list(params)
+      setList(data)
+    } catch (err) {
+      const message = getApiErrorMessage(err)
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
 
   useEffect(() => {
     fetchList()
@@ -99,7 +124,7 @@ export default function ProductList() {
       })
       setCreateOpen(false)
       toast.success('Product created successfully.')
-      fetchList()
+      fetchList() // refresh list so new product appears
     } catch (err) {
       const validation = getApiValidationErrors(err)
       if (Object.keys(validation).length > 0) {
@@ -126,8 +151,9 @@ export default function ProductList() {
         stock: Number(form.stock),
       })
       setEditOpen(false)
+      setSelectedProduct(null)
       toast.success('Product updated successfully.')
-      fetchList()
+      fetchList() // refresh list so updated product is shown
     } catch (err) {
       const validation = getApiValidationErrors(err)
       if (Object.keys(validation).length > 0) {

@@ -11,7 +11,7 @@ A short guide to run and use the Observability-First E-Commerce project on your 
 - **Database:** MySQL in Docker (port 3306)
 - **Observability:** Prometheus (metrics), Loki (logs), Tempo (traces), Grafana (UI) — all via Docker
 
-You’ll run MySQL and the observability stack in Docker, then run the Laravel API and React app on your machine.
+You can run **MySQL + Laravel API** in Docker (recommended), or run only MySQL in Docker and the Laravel API on your machine.
 
 ---
 
@@ -23,7 +23,7 @@ You’ll run MySQL and the observability stack in Docker, then run the Laravel A
 
 ---
 
-## Step 1: Start MySQL and the observability stack
+## Step 1: Start MySQL and the Laravel API (Docker)
 
 Open a terminal in the **project root** (`ecommerce-api`):
 
@@ -31,16 +31,10 @@ Open a terminal in the **project root** (`ecommerce-api`):
 cd c:\Users\dhane\ecommerce-api
 ```
 
-Start MySQL:
+Start MySQL and the Laravel API (builds from **backend/** so paths and `vendor` are correct):
 
 ```powershell
 docker compose up --build -d
-```
-
-Start the monitoring stack (Prometheus, Loki, Tempo, Grafana, Promtail):
-
-```powershell
-docker compose -f docker-compose.monitoring.yml up -d
 ```
 
 Check that containers are running:
@@ -49,13 +43,22 @@ Check that containers are running:
 docker ps
 ```
 
-You should see `mysql`, `prometheus`, `loki`, `tempo`, `grafana`, `promtail`.
+You should see **laravel-api** and **mysql**. The API is at **http://localhost:8000**. Use it in Postman with **base_url** `http://localhost:8000` (Register, Login, then Products/Orders).
+
+Start the monitoring stack (optional):
+
+```powershell
+docker compose -f docker-compose.monitoring.yml up -d
+```
 
 ---
 
-## Step 2: Set up and run the backend
+## Step 2: Run the backend on your machine (alternative)
 
-In a **new terminal**:
+If you prefer to run the Laravel API locally instead of in Docker:
+
+1. Start only MySQL: comment out or remove the `laravel` service in `docker-compose.yml`, then run `docker compose up -d`.
+2. In a **new terminal**:
 
 ```powershell
 cd c:\Users\dhane\ecommerce-api\backend
@@ -67,7 +70,7 @@ Create `.env` from the example:
 copy .env.example .env
 ```
 
-Edit `.env` and set the database connection. When MySQL runs in Docker and you run Laravel on the host, use:
+Edit `.env` and set the database connection (Laravel on host, MySQL in Docker):
 
 - `DB_HOST=127.0.0.1`
 - `DB_PORT=3306`

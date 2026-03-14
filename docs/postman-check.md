@@ -59,6 +59,8 @@ Use the Postman collection to verify the API from **postman/Ecommerce-API.postma
 
 **Variables:** `base_url` (required), `token` (set by Login), `product_id`, `order_id` (for single-resource requests).
 
+**Docker:** If the API runs in Docker (`docker compose up`), use **base_url** `http://localhost:8000`. The Laravel service builds from **backend/** so the `vendor` path error does not occur.
+
 ---
 
 ## 5. Typical “full” check order
