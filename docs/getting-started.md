@@ -156,9 +156,32 @@ Use the same email/password as in `.env` or set `TEST_USER_EMAIL` and `TEST_USER
 
 ---
 
+## Using Laragon (or another PHP stack)
+
+The Laravel API lives in the **backend** folder. Laragon’s document root **must** point at **backend\\public**, not at the repo root or the root `public` folder.
+
+1. In Laragon: **Menu → Apache → Virtual Hosts** (or **Nginx → …** if you use Nginx).
+2. Edit the virtual host for this project (e.g. `ecommerce-api.test`).
+3. Set **Document Root** to:
+   ```text
+   C:\Users\dhane\ecommerce-api\backend\public
+   ```
+   Do **not** use:
+   - `C:\Users\dhane\ecommerce-api`
+   - `C:\Users\dhane\ecommerce-api\public`
+4. Save and restart Apache/Nginx.
+
+Then use **http://ecommerce-api.test** (or your configured URL) as **base_url** in Postman. If you keep using the built-in PHP server instead, run it from the backend: `cd backend` then `php artisan serve`, and use **http://localhost:8000** as **base_url**.
+
+---
+
 ## Troubleshooting
 
-- **"Failed to open stream... vendor\\laravel\\framework\\... server.php" / "No such file or directory":** The app is being run from the **repo root** instead of the **backend**. Fix: (1) Run the API from the backend folder: `cd backend` then `php artisan serve` and use **http://localhost:8000** for the API. (2) If you use **Laragon**, set the virtual host document root to `C:\Users\dhane\ecommerce-api\backend\public` (not `ecommerce-api\public`). (3) Root `public/index.php` now delegates to the backend, so if your server points at repo root `public/`, it should work; if it still fails, point the document root at `backend\public`.
+- **"Failed to open stream... vendor\\laravel\\framework\\... server.php" / "No such file or directory" / "Failed opening required ... ecommerce-api\\vendor\\..."**  
+  The server is using the **repo root** instead of the **backend**. The Laravel app and `vendor` are in **backend**, so PHP is looking for `ecommerce-api\vendor`, which does not exist.  
+  **Fix:**  
+  1. **If using Laragon:** Set the virtual host document root to `C:\Users\dhane\ecommerce-api\backend\public` (see **Using Laragon** above).  
+  2. **If using `php artisan serve`:** Run it from the backend folder: `cd c:\Users\dhane\ecommerce-api\backend`, then `php artisan serve`. Use **http://localhost:8000** in Postman.
 - **"Connection refused" to MySQL:** Ensure `docker compose up -d` ran and `DB_HOST=127.0.0.1` in `backend/.env`. Wait a few seconds after starting MySQL before running migrations.
 - **Frontend can’t reach API:** Confirm the API is at http://localhost:8000 and the frontend is configured to use that base URL (check `frontend` env or API client config).
 - **No logs in Loki:** Promtail reads Docker container logs. If the Laravel app runs on the host (not in Docker), only container logs (e.g. Prometheus, Loki) appear; run the app in Docker to see its logs in Loki.

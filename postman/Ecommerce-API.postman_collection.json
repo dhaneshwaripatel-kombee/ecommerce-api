@@ -25,6 +25,32 @@
 	],
 	"item": [
 		{
+			"name": "Health check",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/up",
+					"host": ["{{base_url}}"],
+					"path": ["up"]
+				},
+				"description": "Check if the API is running. Returns 200 when healthy. Run this first to confirm base_url is correct."
+			},
+			"response": [
+				{
+					"name": "OK (200)",
+					"status": "OK",
+					"code": 200,
+					"body": "{\n  \"status\": \"ok\"\n}"
+				}
+			]
+		},
+		{
 			"name": "Authentication",
 			"item": [
 				{
