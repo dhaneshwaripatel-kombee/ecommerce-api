@@ -71,7 +71,10 @@ export default {
       boxShadow: {
         'netflix': '0 10px 30px -10px rgba(0, 0, 0, 0.7)',
         'glow-purple': '0 0 15px -2px rgba(139, 92, 246, 0.4)',
-      }
+      },
+      fontFamily: {
+        sans: ['Outfit', 'sans-serif'],
+      },
     },
   },
   plugins: [import("tailwindcss-animate")],
